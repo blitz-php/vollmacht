@@ -1,0 +1,106 @@
+{
+    "name": "blitz-php/vollmacht",
+    "description": "Serveur OAuth2 pour BlitzPHP - La procuration officielle",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "BlitzPHP",
+        "oauth2",
+        "authentication",
+        "authorization",
+        "api",
+        "jwt"
+    ],
+    "authors": [
+        {
+            "name": "Dimitri Sitchet Tomkeu",
+            "email": "devcode.dst@gmail.com"
+        }
+    ],
+    "homepage": "https://github.com/blitz-php/vollmacht",
+    "support": {
+        "forum": "https://github.com/blitz-php/vollmacht/discussions",
+        "source": "https://github.com/blitz-php/vollmacht",
+        "issues": "https://github.com/blitz-php/vollmacht/issues",
+        "docs": "https://github.com/blitz-php/vollmacht"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": "^8.2",
+        "blitz-php/schild": "^1.7.1-rc",
+        "league/oauth2-server": "^9.0",
+        "firebase/php-jwt": "^7.0.5"
+    },
+    "require-dev": {
+        "blitz-php/coding-standard": "^1.6",
+        "blitz-php/framework": "^1.0.6-rc",
+        "phpstan/phpstan": "^1.12.33",
+        "kahlan/kahlan": "^5.2",
+        "fakerphp/faker": "^1.24"
+    },
+    "suggest": {
+        "ext-openssl": "Requis pour la génération des clés de chiffrement OAuth.",
+        "blitz-php/http-client": "Utile pour tester les endpoints OAuth en local."
+    },
+    "autoload": {
+        "psr-4": {
+            "BlitzPHP\\Vollmacht\\": "src/"
+        },
+        "exclude-from-classmap": [
+            "**/Database/Migrations/**"
+        ],
+        "files": [
+            "src/Config/constants.php",
+            "src/Config/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Spec\\BlitzPHP\\Vollmacht\\": "tests",
+            "Spec\\Support\\BlitzPHP\\Vollmacht\\": "tests/_support"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
+    },
+    "scripts": {
+        "analyze": "phpstan analyse",
+        "test": "kahlan",
+        "test:cov": [
+			"Composer\\Config::disableProcessTimeout",
+			"kahlan --coverage=3 --reporter=verbose --clover=scrutinizer.xml"
+		],
+        "cs": [
+            "Composer\\Config::disableProcessTimeout",
+            "php-cs-fixer fix --ansi --verbose --dry-run --diff"
+        ],
+        "cs:fix": [
+            "Composer\\Config::disableProcessTimeout",
+            "php-cs-fixer fix --ansi --verbose --diff"
+        ],
+        "ci": [
+            "Composer\\Config::disableProcessTimeout",
+            "@cs",
+            "@analyze",
+            "@test"
+        ],
+        "sa": "@analyze",
+        "style": "@cs:fix"
+    },
+    "scripts-descriptions": {
+        "analyze": "Lance l'analyse statique du code.",
+        "cs": "Vérifie les normes de codage.",
+        "cs:fix": "Corrige le style de codage.",
+        "test": "Exécute les tests unitaires.",
+        "ci": "Script d'intégration continue complet."
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.x-dev"
+        }
+    }
+}
