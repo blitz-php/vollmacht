@@ -39,7 +39,7 @@
         "blitz-php/coding-standard": "^1.6",
         "blitz-php/framework": "^1.0.6-rc",
         "phpstan/phpstan": "^1.12.33",
-        "kahlan/kahlan": "^5.2",
+        "kahlan/kahlan": "^5.2 || ^6.0",
         "fakerphp/faker": "^1.24"
     },
     "suggest": {
