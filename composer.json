@@ -28,9 +28,12 @@
     "prefer-stable": true,
     "require": {
         "php": "^8.2",
+        "ext-json": "*",
+        "ext-openssl": "*",
         "blitz-php/schild": "^1.7.1-rc",
+        "firebase/php-jwt": "^7.0.5",
         "league/oauth2-server": "^9.0",
-        "firebase/php-jwt": "^7.0.5"
+        "spatie/crypto": "^2.1"
     },
     "require-dev": {
         "blitz-php/coding-standard": "^1.6",
