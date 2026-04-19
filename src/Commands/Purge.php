@@ -17,7 +17,7 @@ class Purge extends Command
     /**
 	 * {@inheritDoc}
      */
-    protected $description = 'Purge revoked and / or expired tokens and authentication codes';
+    protected string $description = 'Purge revoked and / or expired tokens and authentication codes';
 
     /**
      * {@inheritDoc}

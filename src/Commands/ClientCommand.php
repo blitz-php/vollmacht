@@ -12,19 +12,16 @@ class ClientCommand extends Command
 	protected string $name = 'vollmacht:client';
 
     protected string $description = 'Create a client for issuing access tokens';
-
-	protected array $arguments = [
-		'<name>' => 'Nom du client',
-	];
-
+		
 	protected array $options = [
+		'--name'         => 'Nom du client',
 		'--personal'     => 'Create a personal access token client',
 		'--password'     => 'Create a password grant client',
 		'--client'       => 'Create a client credentials grant client',
 		'--implicit'     => 'Create an implicit grant client',
 		'--device'       => 'Create a device authorization grant client',
 		'--provider'     => 'The name of the user provider',
-		'--redirect_uri' => 'The URI to redirect to after authorization ',
+		'--redirect-uri' => 'The URI to redirect to after authorization ',
 		'--public'       => 'Create a public client (without secret)',
 	];
 
@@ -89,13 +86,15 @@ class ClientCommand extends Command
 
 	protected function retrieveProvider(): string
 	{
+		return 'vollmacht';
+		
 		if (null === $provider = $this->option('provider')) {
 			$provider = $this->choice(
             	'Which user provider should this client use to retrieve users?',
             collect(config('auth.guards'))->where('driver', 'passport')->pluck('provider')->all()
                 ?: collect(config('auth.providers'))->keys()->all(),
             config('auth.guards.api.provider')
-        );
+        	);
 		}
 
 		return $provider;
@@ -114,7 +113,7 @@ class ClientCommand extends Command
      */
     protected function createImplicitClient(): Client
     {
-        $redirect = $this->option('redirect_uri') ?: $this->ask(
+        $redirect = $this->option('redirect-uri') ?: $this->ask(
             'Where should we redirect the request after authorization?',
             url('/auth/callback')
         );
@@ -142,7 +141,7 @@ class ClientCommand extends Command
      */
     protected function createAuthCodeClient(): Client
     {
-        $redirect = $this->option('redirect_uri') ?: $this->ask(
+        $redirect = $this->option('redirect-uri') ?: $this->ask(
             'Where should we redirect the request after authorization?',
             url('/auth/callback')
         );
