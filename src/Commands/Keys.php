@@ -3,8 +3,8 @@
 namespace BlitzPHP\Vollmacht\Commands;
 
 use BlitzPHP\Cli\Console\Command;
+use BlitzPHP\Vollmacht\Patchs\Rsa\KeyPair;
 use BlitzPHP\Vollmacht\Vollmacht;
-use Spatie\Crypto\Rsa\KeyPair;
 
 class Keys extends Command
 {
@@ -53,7 +53,7 @@ class Keys extends Command
             chmod($privateKey, 0600);
         }
 
-        $this->info('Encryption keys generated successfully.');
+        $this->success('Encryption keys generated successfully.');
 
         return EXIT_SUCCESS;
     }

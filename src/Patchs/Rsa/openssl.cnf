@@ -1,0 +1,33 @@
+[default]
+default_md = sha256
+
+[req]
+distinguished_name = req_distinguished_name
+prompt = no
+default_bits = 4096
+default_md = sha256
+
+[req_distinguished_name]
+C = CM
+ST = Cameroun
+L = Yaoundé
+O = MonOrganisation
+OU = MonDepartement
+CN = Localhost
+
+[openssl_init]
+oid_section = new_oids
+engines = engine_section
+
+[new_oids]
+
+[engine_section]
+
+[ca]
+default_ca = CA_default
+
+[CA_default]
+database = index.txt
+serial = serial
+crlnumber = crlnumber
+default_md = sha256
