@@ -3,10 +3,8 @@
 namespace BlitzPHP\Vollmacht\Providers;
 
 use BlitzPHP\Container\AbstractProvider;
-use BlitzPHP\Contracts\Container\ContainerInterface;
 use BlitzPHP\Contracts\Security\EncrypterInterface;
-use BlitzPHP\Http\Request;
-use BlitzPHP\Vollmacht\Authenticators\TokenAuthenticator;
+use BlitzPHP\Utilities\DateTime\Date;
 use BlitzPHP\Vollmacht\Bridge\AccessTokenRepository;
 use BlitzPHP\Vollmacht\Bridge\AuthCodeRepository;
 use BlitzPHP\Vollmacht\Bridge\ClientRepository as BridgeClientRepository;
@@ -16,15 +14,8 @@ use BlitzPHP\Vollmacht\Bridge\PersonalAccessGrant;
 use BlitzPHP\Vollmacht\Bridge\RefreshTokenRepository;
 use BlitzPHP\Vollmacht\Bridge\ScopeRepository;
 use BlitzPHP\Vollmacht\Bridge\UserRepository;
-use BlitzPHP\Vollmacht\Contracts\ApprovedDeviceAuthorizationResponse as ApprovedDeviceAuthorizationResponseContract;
-use BlitzPHP\Vollmacht\Contracts\DeniedDeviceAuthorizationResponse as DeniedDeviceAuthorizationResponseContract;
-use BlitzPHP\Vollmacht\Controllers\AuthorizationController;
-use BlitzPHP\Vollmacht\Controllers\DeviceAuthorizationController;
 use BlitzPHP\Vollmacht\Factories\PersonalAccessTokenFactory;
-use BlitzPHP\Vollmacht\Models\UserModel;
-use BlitzPHP\Vollmacht\Repositories\ClientRepository;
-use BlitzPHP\Vollmacht\Responses\ApprovedDeviceAuthorizationResponse;
-use BlitzPHP\Vollmacht\Responses\DeniedDeviceAuthorizationResponse;
+use BlitzPHP\Vollmacht\Routes;
 use BlitzPHP\Vollmacht\Vollmacht;
 use DateInterval;
 use League\OAuth2\Server\AuthorizationServer;
@@ -40,36 +31,55 @@ use League\OAuth2\Server\ResponseTypes\ResponseTypeInterface;
 
 class VollmachtProvider extends AbstractProvider
 {
-	public static function definitions(): array
-	{
-		return [
-			ApprovedDeviceAuthorizationResponseContract::class => fn(ContainerInterface $container) => $container->get(ApprovedDeviceAuthorizationResponse::class),
-			DeniedDeviceAuthorizationResponseContract::class   => fn(ContainerInterface $container) => $container->get(DeniedDeviceAuthorizationResponse::class),
-
-			AuthorizationController::class => function(ContainerInterface $container) {
-				return new AuthorizationController(
-					$container->get(AuthorizationServer::class),
-					auth(config('vollmacht.guard'))->getAuthenticator(),
-					$container->get(ClientRepository::class),
-				);
-			},
-			DeviceAuthorizationController::class => function(ContainerInterface $container) {
-				return new DeviceAuthorizationController(
-					auth(config('vollmacht.guard'))->getAuthenticator(),
-					$container->get(DeviceCodeRepository::class),
-					$container->get(ClientRepository::class),
-				);
-			},
-		];
-	}
-
 	public function register(): void
     {
+		$this->setupConfiguration();
+		$this->registerRoutes();
 		$this->registerAuthorizationServer();
         $this->registerResourceServer();
-        $this->registerAuthenticator();
+		$this->deleteCookieOnLogout();
     }
 
+	protected function setupConfiguration()
+	{
+		Vollmacht::$registersRoutes        = parametre('vollmacht.enable') ?? Vollmacht::$registersRoutes;
+		Vollmacht::$deviceCodeGrantEnabled = parametre('vollmacht.device_code_grant_enabled') ?? Vollmacht::$deviceCodeGrantEnabled;
+		Vollmacht::$registersJsonApiRoutes = parametre('vollmacht.registers_json_api_routes') ?? Vollmacht::$registersJsonApiRoutes;
+
+		if (is_dir($path = config('vollmacht.keys_path'))) {
+			Vollmacht::loadKeysFrom($path);
+		}
+
+		Vollmacht::defaultScopes(parametre('vollmacht.default_scopes'));
+		Vollmacht::tokensCan(parametre('vollmacht.scopes'));
+
+		Vollmacht::personalAccessTokensExpireIn(Date::now()->addSeconds(parametre('vollmacht.personal_access_token_lifetime')));
+		Vollmacht::refreshTokensExpireIn(Date::now()->addSeconds(parametre('vollmacht.refresh_token_lifetime')));
+		Vollmacht::tokensExpireIn(Date::now()->addSeconds(parametre('vollmacht.access_token_lifetime')));
+
+		if ($refreshTokenModel = config('vollmacht.refresh_token_entity')) {
+			Vollmacht::useRefreshTokenModel($refreshTokenModel);
+		}
+		if ($tokenModel = config('vollmacht.token_entity')) {
+			Vollmacht::useTokenModel($tokenModel);
+		}
+		if ($clientModel = config('vollmacht.client_entity')) {
+			Vollmacht::useClientModel($clientModel);
+		}
+		if ($deviceCodeModel = config('vollmacht.device_code_entity')) {
+			Vollmacht::useDeviceCodeModel($deviceCodeModel);
+		}
+		if ($authCodeModel = config('vollmacht.auth_code_entity')) {
+			Vollmacht::useAuthCodeModel($authCodeModel);
+		}
+	}
+
+	protected function registerRoutes()
+	{
+		if (Vollmacht::$registersRoutes) {
+			Routes::all();
+		}
+	}
 
 	/**
      * Register the authorization server.
@@ -233,20 +243,6 @@ class VollmachtProvider extends AbstractProvider
         }
 
         return new CryptKey($key, null, Vollmacht::$validateKeyPermissions);
-    }
-
-    /**
-     * Register the token guard.
-     */
-    protected function registerAuthenticator(): void
-    {
-		$this->container->add(TokenAuthenticator::class, fn() => new TokenAuthenticator(
-			model(UserModel::class),
-            $this->container->make(ResourceServer::class),
-            $this->container->get(ClientRepository::class),
-            $this->container->get(EncrypterInterface::class),
-            $this->container->get(Request::class)
-        ));
     }
 
     /**

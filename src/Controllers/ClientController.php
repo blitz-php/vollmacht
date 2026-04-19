@@ -1,56 +1,52 @@
 <?php
 
-namespace Laravel\Passport\Http\Controllers;
+namespace BlitzPHP\Vollmacht\Controllers;
 
-use Illuminate\Contracts\Validation\Factory as ValidationFactory;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Laravel\Passport\Client;
-use Laravel\Passport\ClientRepository;
-use Laravel\Passport\Http\Rules\RedirectRule;
+use BlitzPHP\Contracts\Http\StatusCode;
+use BlitzPHP\Http\Response;
+use BlitzPHP\Vollmacht\Entities\Client;
+use BlitzPHP\Vollmacht\Repositories\ClientRepository;
+use BlitzPHP\Wolke\Collection;
 
 /**
  * @deprecated Will be removed in a future Laravel version.
  */
-class ClientController
+class ClientController extends BaseController
 {
-    /**
+	/**
      * Create a client controller instance.
      */
-    public function __construct(
-        protected ClientRepository $clients,
-        protected ValidationFactory $validation,
-        protected RedirectRule $redirectRule,
-    ) {
+    public function __construct(protected ClientRepository $clients)
+	{
+
     }
 
     /**
      * Get all of the clients for the authenticated user.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, \Laravel\Passport\Client>
+     * @return Collection<int, Client>
      */
-    public function forUser(Request $request): Collection
+    public function forUser(): Collection
     {
-        return $this->clients->forUser($request->user());
+        return $this->clients->forUser($this->authenticator->getUser());
     }
 
     /**
      * Store a new client.
      */
-    public function store(Request $request): Client
+    public function store(): Client
     {
-        $this->validation->make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
-            'redirect' => ['required', $this->redirectRule],
+        $post = $this->validate([
+            'name'         => ['required', 'string', 'max:255'],
+            'redirect'     => ['required', 'url:http,https'],
             'confidential' => 'boolean',
-        ])->validate();
+        ])->toArray();
 
         $client = $this->clients->createAuthorizationCodeGrantClient(
-            $request->name,
-            explode(',', $request->redirect),
-            $confidential = (bool) $request->input('confidential', true),
-            $request->user(),
+            $post['name'],
+            explode(',', $post['redirect']),
+            $confidential = $this->request->boolean('confidential', true),
+            $this->authenticator->getUser(),
         );
 
         return $confidential ? $client->append(['plain_secret']) : $client;
@@ -59,21 +55,21 @@ class ClientController
     /**
      * Update the given client.
      */
-    public function update(Request $request, string|int $clientId): Response|Client
+    public function update(string|int $clientId): Response|Client
     {
-        $client = $this->clients->findForUser($clientId, $request->user());
+        $client = $this->clients->findForUser($clientId, $this->authenticator->getUser());
 
         if (! $client) {
-            return new Response('', 404);
+            return (new Response())->withStatus(404);
         }
 
-        $this->validation->make($request->all(), [
+        $post = $this->validate([
             'name' => ['required', 'string', 'max:255'],
-            'redirect' => ['required', $this->redirectRule],
-        ])->validate();
+            'redirect' => ['required', 'url:http,https'],
+        ])->toArray();
 
         $this->clients->update(
-            $client, $request->name, explode(',', $request->redirect)
+            $client, $post['name'], explode(',', $post['redirect'])
         );
 
         return $client;
@@ -82,16 +78,16 @@ class ClientController
     /**
      * Delete the given client.
      */
-    public function destroy(Request $request, string|int $clientId): Response
+    public function destroy(string|int $clientId): Response
     {
-        $client = $this->clients->findForUser($clientId, $request->user());
+        $client = $this->clients->findForUser($clientId, $this->authenticator->getUser());
 
         if (! $client) {
-            return new Response('', 404);
+			return (new Response())->withStatus(StatusCode::NOT_FOUND);
         }
 
         $this->clients->delete($client);
 
-        return new Response('', Response::HTTP_NO_CONTENT);
+        return (new Response())->withStatus(StatusCode::NO_CONTENT);
     }
 }

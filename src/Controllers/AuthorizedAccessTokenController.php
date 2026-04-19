@@ -1,34 +1,29 @@
 <?php
 
-namespace Laravel\Passport\Http\Controllers;
+namespace BlitzPHP\Vollmacht\Controllers;
 
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Laravel\Passport\Token;
-use Laravel\Passport\TokenRepository;
+use BlitzPHP\Contracts\Http\StatusCode;
+use BlitzPHP\Http\Response;
+use BlitzPHP\Vollmacht\Entities\Token;
+use BlitzPHP\Vollmacht\Repositories\TokenRepository;
 
-/**
- * @deprecated Will be removed in a future Laravel version.
- */
-class AuthorizedAccessTokenController
+class AuthorizedAccessTokenController extends BaseController
 {
-    /**
+	/**
      * Create a new controller instance.
      */
-    public function __construct(
-        protected TokenRepository $tokenRepository,
-    ) {
+    public function __construct(protected TokenRepository $tokenRepository) 
+	{
     }
 
     /**
      * Get all of the authorized tokens for the authenticated user.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, \Laravel\Passport\Token>
+     * @return \BlitzPHP\Wolke\Collection<int, Token>
      */
-    public function forUser(Request $request): Collection
+    public function forUser()
     {
-        return $this->tokenRepository->forUser($request->user())
+		return $this->tokenRepository->forUser($this->authenticator->getUser())
             ->reject(fn (Token $token): bool => $token->client->revoked || $token->client->firstParty())
             ->values();
     }
@@ -36,19 +31,17 @@ class AuthorizedAccessTokenController
     /**
      * Delete the given token.
      */
-    public function destroy(Request $request, string $tokenId): Response
+    public function destroy(string $tokenId): Response
     {
-        $token = $this->tokenRepository->findForUser(
-            $tokenId, $request->user()
-        );
+        $token = $this->tokenRepository->findForUser($tokenId, $this->authenticator->getUser());
 
         if (is_null($token)) {
-            return new Response('', 404);
+            return (new Response())->withStatus(StatusCode::NOT_FOUND);
         }
 
         $token->revoke();
         $token->refreshToken?->revoke();
 
-        return new Response('', Response::HTTP_NO_CONTENT);
+        return (new Response())->withStatus(StatusCode::NO_CONTENT);
     }
 }

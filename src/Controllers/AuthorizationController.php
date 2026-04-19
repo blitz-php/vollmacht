@@ -4,12 +4,11 @@ namespace BlitzPHP\Vollmacht\Controllers;
 
 use BlitzPHP\Http\Request;
 use BlitzPHP\Http\Response;
-use BlitzPHP\Schild\Authentication\AuthenticatorInterface;
 use BlitzPHP\Schild\Entities\User as UserEntity;
 use BlitzPHP\Utilities\DateTime\Date;
 use BlitzPHP\Utilities\String\Text;
+use BlitzPHP\View\View;
 use BlitzPHP\Vollmacht\Bridge\User;
-use BlitzPHP\Vollmacht\Contracts\AuthorizationViewResponse;
 use BlitzPHP\Vollmacht\Entities\Client;
 use BlitzPHP\Vollmacht\Exceptions\AuthenticationException;
 use BlitzPHP\Vollmacht\Exceptions\OAuthServerException;
@@ -26,20 +25,15 @@ class AuthorizationController extends BaseController
     /**
      * Create a new controller instance.
      */
-    public function __construct(
-        protected AuthorizationServer $server,
-        protected AuthenticatorInterface $authenticator,
-        protected ClientRepository $clients,
-    ) {
-    }
+    public function __construct(protected AuthorizationServer $server, protected ClientRepository $clients)
+	{
+	}
 
     /**
      * Authorize a client to access the user's account.
      */
-    public function authorize(
-        ResponseInterface $psrResponse,
-        AuthorizationViewResponse $viewResponse
-    ): Response|AuthorizationViewResponse {
+    public function authorize(): Response|View
+	{
 		$request = $this->request;
 
         $authRequest = $this->withErrorHandling(
@@ -47,7 +41,7 @@ class AuthorizationController extends BaseController
             ($request->getQueryParams()['response_type'] ?? null) === 'token'
         );
 
-        $prompt = $request->str('prompt')->explode(' ')->map(trim(...))->filter()->values();
+        $prompt = $request->str('prompt', '')->explode(' ')->map(trim(...))->filter()->values();
 
         // If the prompt parameter includes "none", all other prompt values will be ignored
         // An error will be returned if the end-user is not already authenticated or the
@@ -56,15 +50,16 @@ class AuthorizationController extends BaseController
             $prompt = collect(['none']);
         }
 
-        if (! $this->authenticator->loggedIn()) {
+		$authenticator = auth('session')->getAuthenticator();
+
+        if (! $authenticator->loggedIn()) {
             $prompt->contains('none')
                 ? throw OAuthServerException::loginRequired($authRequest)
                 : $this->promptForLogin($request);
         }
 
-        if ($prompt->contains('login') &&
-            ! $request->session()->get('promptedForLogin', false)) {
-            $this->authenticator->logout();
+        if ($prompt->contains('login') && ! $request->session()->get('promptedForLogin', false)) {
+            $authenticator->logout();
 			$request->session()->flush();
 			$request->session()->regenerate(true);
 
@@ -73,7 +68,7 @@ class AuthorizationController extends BaseController
 
         $request->session()->remove('promptedForLogin');
 
-		$user = $this->authenticator->getUser();
+		$user = $authenticator->getUser();
         $authRequest->setUser(new User($user->id));
 
         $scopes = $this->parseScopes($authRequest);
@@ -81,23 +76,51 @@ class AuthorizationController extends BaseController
 
         if ($prompt->doesntContain('consent') &&
             ($client->skipsAuthorization($user, $scopes) || $this->hasGrantedScopes($user, $client, $scopes))) {
-            return $this->approveRequest($authRequest, $psrResponse);
+            return $this->approveRequest($authRequest, $this->response);
         }
 
         if ($prompt->contains('none')) {
             throw OAuthServerException::consentRequired($authRequest);
         }
 
-        $request->session()->put('authToken', $authToken = Text::random());
+		$request->session()->put('authToken', $authToken = Text::random());
         $request->session()->put('authRequest', serialize($authRequest));
 
-        return $viewResponse->withParameters([
+		return view(parametre('vollmacht.views.authorization'))->with([
             'client'    => $client,
             'user'      => $user,
             'scopes'    => $scopes,
             'request'   => $request,
             'authToken' => $authToken,
         ]);
+    }
+
+	/**
+     * Approve the authorization request.
+     */
+    public function approve(): Response
+    {
+        $authRequest = $this->getAuthRequestFromSession();
+
+        $authRequest->setAuthorizationApproved(true);
+
+        return $this->withErrorHandling(fn () => $this->convertResponse(
+            $this->server->completeAuthorizationRequest($authRequest, $this->response)
+        ), $authRequest->getGrantTypeId() === 'implicit');
+    }
+
+	/**
+     * Deny the authorization request.
+     */
+    public function deny(): Response
+    {
+        $authRequest = $this->getAuthRequestFromSession();
+
+        $authRequest->setAuthorizationApproved(false);
+
+        return $this->withErrorHandling(fn () => $this->convertResponse(
+            $this->server->completeAuthorizationRequest($authRequest, $this->response)
+        ), $authRequest->getGrantTypeId() === 'implicit');
     }
 
     /**
@@ -122,9 +145,9 @@ class AuthorizationController extends BaseController
     protected function hasGrantedScopes(UserEntity $user, Client $client, array $scopes): bool
     {
         $activeTokens = $client->tokens()->where([
-            ['user_id', '=', $user->id],
-            ['revoked', '=', false],
-            ['expires_at', '>', Date::now()],
+			'user_id'    => $user->id,
+			'revoked'    => false,
+			'expires_at' => ['>', Date::now()],
         ]);
 
         // If no specific scope is requested, we'll simply check whether the given

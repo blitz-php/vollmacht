@@ -1,38 +1,35 @@
 <?php
 
-namespace Laravel\Passport\Http\Controllers;
+namespace BlitzPHP\Vollmacht\Controllers;
 
-use Illuminate\Contracts\Validation\Factory as ValidationFactory;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Validation\Rule;
-use Laravel\Passport\Passport;
-use Laravel\Passport\PersonalAccessTokenResult;
-use Laravel\Passport\Token;
-use Laravel\Passport\TokenRepository;
+use BlitzPHP\Contracts\Http\StatusCode;
+use BlitzPHP\Http\Response;
+use BlitzPHP\Validation\Rule;
+use BlitzPHP\Vollmacht\Entities\Token;
+use BlitzPHP\Vollmacht\PersonalAccessTokenResult;
+use BlitzPHP\Vollmacht\Repositories\TokenRepository;
+use BlitzPHP\Vollmacht\Vollmacht;
 
 /**
  * @deprecated Will be removed in a future Laravel version.
  */
-class PersonalAccessTokenController
+class PersonalAccessTokenController extends BaseController
 {
     /**
      * Create a controller instance.
      */
-    public function __construct(
-        protected TokenRepository $tokenRepository,
-        protected ValidationFactory $validation,
-    ) {
+    public function __construct(protected TokenRepository $tokenRepository) 
+	{
     }
 
     /**
      * Get all of the personal access tokens for the authenticated user.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, \Laravel\Passport\Token>
+     * @return \BlitzPHP\Wolke\Collection<int, Token>
      */
-    public function forUser(Request $request)
+    public function forUser()
     {
-        return $this->tokenRepository->forUser($request->user())
+        return $this->tokenRepository->forUser($this->authenticator->getUser())
             ->filter(
                 fn (Token $token): bool => ! $token->client->revoked && $token->client->hasGrantType('personal_access')
             )
@@ -42,33 +39,31 @@ class PersonalAccessTokenController
     /**
      * Create a new personal access token for the user.
      */
-    public function store(Request $request): PersonalAccessTokenResult
+    public function store(): PersonalAccessTokenResult
     {
-        $this->validation->make($request->all(), [
-            'name' => ['required', 'max:255'],
-            'scopes' => ['array', Rule::in(Passport::scopeIds())],
-        ])->validate();
+        $post = $this->validate([
+            'name'   => ['required', 'max:255'],
+            'scopes' => ['array', Rule::in(Vollmacht::scopeIds())],
+        ])->toArray();
 
-        return $request->user()->createToken(
-            $request->name, $request->scopes ?: []
+        return $this->authenticator->getUser()->createToken(
+            $post['name'], $post['scopes'] ?: []
         );
     }
 
     /**
      * Delete the given token.
      */
-    public function destroy(Request $request, string $tokenId): Response
+    public function destroy(string $tokenId): Response
     {
-        $token = $this->tokenRepository->findForUser(
-            $tokenId, $request->user()
-        );
+        $token = $this->tokenRepository->findForUser($tokenId, $this->authenticator->getUser());
 
         if (is_null($token)) {
-            return new Response('', 404);
+            return (new Response())->withStatus(StatusCode::NOT_FOUND);
         }
 
         $token->revoke();
 
-        return new Response('', Response::HTTP_NO_CONTENT);
+        return (new Response())->withStatus(StatusCode::NO_CONTENT);
     }
 }

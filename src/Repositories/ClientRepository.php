@@ -2,12 +2,14 @@
 
 namespace BlitzPHP\Vollmacht\Repositories;
 
+use BlitzPHP\Schild\Entities\User;
 use BlitzPHP\Utilities\String\Text;
 use BlitzPHP\Vollmacht\Contracts\OAuthenticatable;
 use BlitzPHP\Vollmacht\Entities\Client;
 use BlitzPHP\Vollmacht\Entities\Token;
 use BlitzPHP\Vollmacht\Vollmacht;
 use BlitzPHP\Wolke\Builder;
+use BlitzPHP\Wolke\Collection;
 use RuntimeException;
 
 class ClientRepository
@@ -28,6 +30,32 @@ class ClientRepository
         $client = $this->find($id);
 
         return $client && ! $client->revoked ? $client : null;
+    }
+
+    /**
+     * Get a client instance for the given ID and user ID.
+     *
+     * @deprecated Use $user->oauthApps()->find()
+     *
+     * @param  \BlitzPHP\Vollmacht\Contracts\OAuthenticatable  $user
+     */
+    public function findForUser(string|int $clientId, User $user): ?Client
+    {
+        return $user->clients()->where('revoked', false)->find($clientId);
+    }
+
+    /**
+     * Get the client instances for the given user ID.
+     *
+     * @deprecated Use $user->oauthApps()
+     *
+     * @param  \BlitzPHP\Vollmacht\Contracts\OAuthenticatable  $user
+	 * 
+     * @return Collection<int, Client>
+     */
+    public function forUser(User $user): Collection
+    {
+        return $user->clients()->where('revoked', false)->orderBy('name')->get();
     }
 
     /*

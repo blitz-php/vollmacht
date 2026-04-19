@@ -1,6 +1,6 @@
 {
     "name": "blitz-php/vollmacht",
-    "description": "Serveur OAuth2 pour BlitzPHP - La procuration officielle",
+    "description": "Serveur OAuth2 officiel de BlitzPHP",
     "license": "MIT",
     "type": "library",
     "keywords": [
@@ -43,8 +43,7 @@
         "fakerphp/faker": "^1.24"
     },
     "suggest": {
-        "ext-openssl": "Requis pour la génération des clés de chiffrement OAuth.",
-        "blitz-php/http-client": "Utile pour tester les endpoints OAuth en local."
+        "ext-openssl": "Requis pour la génération des clés de chiffrement OAuth."
     },
     "autoload": {
         "psr-4": {
@@ -52,10 +51,6 @@
         },
         "exclude-from-classmap": [
             "**/Database/Migrations/**"
-        ],
-        "files": [
-            "src/Config/constants.php",
-            "src/Config/helpers.php"
         ]
     },
     "autoload-dev": {

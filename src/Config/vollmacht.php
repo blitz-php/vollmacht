@@ -2,6 +2,17 @@
 
 return [
 	/**
+     * --------------------------------------------------------------------
+     * Fichiers de vues
+     * --------------------------------------------------------------------
+     */
+    'views' => [
+        'authorization'        => '\BlitzPHP\Vollmacht\Views\authorize',
+        'device-authorization' => '\BlitzPHP\Vollmacht\Views\device-authorize',
+        'device-user-code'     => '\BlitzPHP\Vollmacht\Views\device-user-code',
+    ],
+
+	/**
      * -------------------------------------------------- -------------------
      * Enregistrer les tentatives de connexion pour l'authentification par jeton et l'authentification HMAC
      * ------------------------------------------------- -------------------
@@ -15,18 +26,23 @@ return [
     'record_login_attempt' => RECORD_LOGIN_ATTEMPT_FAILURE,
 
     /**
-	 * Clé privée (ou chemin absolu) pour signer les tokens JWT
+	 * Clé privée pour signer les tokens JWT
 	 *
 	 * @var string
 	 */
-	'private_key' => env('vollmacht.private_key', storage_path('oauth-private.key')),
+	'private_key' => env('vollmacht.private_key'),
 
 	/**
 	 * Chemin de la clé publique (ou chemin absolu) pour vérifier les tokens JWT
 	 *
 	 * @var string
 	 */
-	'public_key' => env('vollmacht.public_key', storage_path('oauth-public.key')),
+	'public_key' => env('vollmacht.public_key'),
+
+	/**
+	 * Chemin de stockage des fichiers de clés privées/publiques
+	 */
+	'keys_path' => STORAGE_PATH,
 
 	/**
      * Algorithme de signature JWT
@@ -40,14 +56,14 @@ return [
 	 *
 	 * @var int
 	 */
-	'access_token_lifetime' => HOUR,
+	'access_token_lifetime' => YEAR,
 
 	/**
 	 * Durée de vie des refresh tokens (en seconde)
 	 *
 	 * @var int
 	 */
-	'refresh_token_lifetime' => 30 * DAY,
+	'refresh_token_lifetime' => YEAR,
 
 	/**
 	 * Durée de vie des auth codes (en seconde)
@@ -88,14 +104,21 @@ return [
     ],
 
 	/**
-     * Entite User à utiliser
-	 *
-	 * @var class-string<\BlitzPHP\Schild\Entities\User>
+	 * @var bool
      */
-	'user_model' => \BlitzPHP\Schild\Entities\User::class,
+	'device_code_grant_enabled' => true,
+	
+	/**
+	 * @var bool
+     */
+	'registers_json_api_routes' => true,
 
 	/**
      * Indique si les routes vollmacht doivent etre charger
      */
-	'routes' => true,
+	'routes' => [
+		'enable' => true,
+		'prefix' => 'oauth',
+		'namespace' => 'BlitzPHP\Vollmacht\Controllers',
+	],
 ];

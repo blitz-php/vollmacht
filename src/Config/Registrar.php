@@ -2,16 +2,19 @@
 
 namespace BlitzPHP\Vollmacht\Config;
 
+use BlitzPHP\Vollmacht\Authenticators\TokenAuthenticator;
+use BlitzPHP\Vollmacht\Middlewares\TokenAuth;
+
 class Registrar
 {
     /**
-     * Enregistre les middlewares Schild.
+     * Enregistre les middlewares Vollmacht.
      */
     public static function middlewares(): array
     {
         return [
             'aliases' => [
-
+				'auth.vollmacht' => TokenAuth::class,
 			],
         ];
     }
@@ -25,10 +28,14 @@ class Registrar
     }
 
     /**
-     * Routes d'authentification
+     * Ajout de l'authentificateur Vollmacht aux authentificateurs Schild
      */
-    public static function routes(): array
+    public static function auth(): array
     {
-        return [];
+        return [
+			'authenticators' => [
+				'vollmacht' => TokenAuthenticator::class,
+			]
+		];
     }
 }

@@ -34,19 +34,18 @@ class Install extends Command
             '--length' => $this->option('length'),
         ]);
 
-        $this->call(
+        $this->eol()->call(
 			'publish',
 			options: ['--namespace' => 'BlitzPHP\\Vollmacht']
 		);
 
-        if ($this->confirm('Would you like to run all pending database migrations?')) {
-            $this->call('migrate');
-
-            if ($this->confirm('Would you like to create the "personal access" grant client?')) {
-                $this->call(
+        if ($this->eol()->confirm('Would you like to run all pending database migrations?')) {
+            $this->eol()->call('migrate', options: ['--namespace' => 'BlitzPHP\\Vollmacht']);
+		
+            if ($this->eol()->confirm('Would you like to create the "personal access" grant client?')) {
+                $this->eol()->call(
 					'vollmacht:client',
-					['name' => config('app.name')],
-					['--personal' => true]
+					options: ['--name' => config('app.name'), '--personal' => true]
 				);
             }
         }

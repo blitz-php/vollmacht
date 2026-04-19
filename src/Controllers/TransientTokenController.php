@@ -6,14 +6,12 @@ use BlitzPHP\Http\Request;
 use BlitzPHP\Http\Response;
 use BlitzPHP\Vollmacht\Factories\ApiTokenCookieFactory;
 
-class TransientTokenControlle
+class TransientTokenController extends BaseController
 {
     /**
      * Create a new controller instance.
      */
-    public function __construct(
-        protected ApiTokenCookieFactory $cookieFactory,
-    ) {
+    public function __construct(protected ApiTokenCookieFactory $cookieFactory) {
     }
 
     /**
@@ -24,7 +22,7 @@ class TransientTokenControlle
         return (new Response())
 			->withStringBody('Refreshed.')
 			->withCookie($this->cookieFactory->make(
-            user_id(), $request->session()->token()
+            $this->authenticator->getUser()->id, $request->session()->token()
         ));
     }
 }

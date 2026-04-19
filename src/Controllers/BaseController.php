@@ -4,6 +4,7 @@ namespace BlitzPHP\Vollmacht\Controllers;
 
 use BlitzPHP\Controllers\BaseController as CoreController;
 use BlitzPHP\Http\Response;
+use BlitzPHP\Schild\Authentication\AuthenticatorInterface;
 use BlitzPHP\Vollmacht\Exceptions\InvalidAuthTokenException;
 use BlitzPHP\Vollmacht\Exceptions\OAuthServerException;
 use Closure;
@@ -13,15 +14,26 @@ use League\OAuth2\Server\Entities\DeviceCodeEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException as LeagueException;
 use League\OAuth2\Server\RequestTypes\AuthorizationRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
 
 class BaseController extends CoreController
 {
+	protected AuthenticatorInterface $authenticator;
+
 	/**
      * Create a new controller instance.
      */
     public function __construct(protected AuthorizationServer $server)
 	{
     }
+
+	public function initialize(ServerRequestInterface $request, ResponseInterface $response, LoggerInterface $logger)
+	{
+		parent::initialize($request, $response, $logger);
+
+		$this->authenticator = auth(parametre('vollmacht.authenticator', 'vollmacht'))->getAuthenticator();
+	}
 
     /**
      * Convert a PSR7 response to a Illuminate Response.

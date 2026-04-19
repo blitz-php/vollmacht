@@ -31,7 +31,7 @@ class Token extends Entity
     /**
      * {@inheritDoc}
      */
-    protected array $guarded = false;
+    protected array $guarded = [];
 
     /**
      * {@inheritDoc}

@@ -49,6 +49,10 @@ class TokenAuthenticator implements AuthenticatorInterface
     protected ?Client $client = null;
 
 	protected TokenLoginModel $loginModel;
+	protected ResourceServer $server;
+	protected ClientRepository $clients;
+	protected EncrypterInterface $encrypter;
+	protected Request $request;
 
     /**
      * Create a new token guard instance.
@@ -56,14 +60,13 @@ class TokenAuthenticator implements AuthenticatorInterface
 	 * @param UserModel $provider The user provider implementation.
      */
 
-    public function __construct(
-        protected UserModel $provider,
-        protected ResourceServer $server,
-        protected ClientRepository $clients,
-        protected EncrypterInterface $encrypter,
-        protected Request $request,
-    ) {
+    public function __construct(protected UserModel $provider) 
+	{
 		$this->loginModel = model(TokenLoginModel::class);
+		$this->server     = service(ResourceServer::class);
+		$this->clients    = service(ClientRepository::class);
+		$this->encrypter  = service(EncrypterInterface::class);
+		$this->request    = service(Request::class);
 
     }
 
@@ -275,8 +278,10 @@ class TokenAuthenticator implements AuthenticatorInterface
 
 	/**
      * Get the user for the incoming request.
+	 * 
+	 * @return OAuthenticatable|User|null
      */
-    public function user(): ?OAuthenticatable
+    public function user()
 	{
 		return $this->getUser();
 	}

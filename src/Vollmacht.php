@@ -15,7 +15,6 @@ use BlitzPHP\Vollmacht\Entities\Token;
 use Closure;
 use DateInterval;
 use DateTimeInterface;
-use Laravel\Passport\Http\Responses\SimpleViewResponse;
 use League\OAuth2\Server\ResponseTypes\ResponseTypeInterface;
 
 class Vollmacht
@@ -360,7 +359,6 @@ class Vollmacht
     public static function actingAs(
         OAuthenticatable $user,
         array $scopes = [],
-        ?string $guard = 'api',
         ?Client $client = null,
     ): OAuthenticatable {
         $token = new AccessToken([
@@ -375,8 +373,7 @@ class Vollmacht
             $user->wasRecentlyCreated = false;
         }
 
-        app('auth')->guard($guard)->setUser($user);
-        app('auth')->shouldUse($guard);
+		auth('vollmacht')->login($user);
 
         return $user;
     }
@@ -577,56 +574,6 @@ class Vollmacht
         return is_callable(static::$tokenEncryptionKeyCallback)
             ? (static::$tokenEncryptionKeyCallback)($encrypter)
             : $encrypter->getKey();
-    }
-
-    /**
-     * Register the views for Passport using conventional names under the given namespace.
-     */
-    public static function viewNamespace(string $namespace): void
-    {
-        static::viewPrefix($namespace.'::');
-    }
-
-    /**
-     * Register the views for Passport using conventional names under the given prefix.
-     */
-    public static function viewPrefix(string $prefix): void
-    {
-        $prefix = rtrim($prefix, '.');
-
-        static::authorizationView($prefix.'.authorize');
-        static::deviceAuthorizationView($prefix.'.device.authorize');
-        static::deviceUserCodeView($prefix.'.device.user-code');
-    }
-
-    /**
-     * Specify which view should be used as the authorization view.
-     *
-     * @param  (\Closure(array<string, mixed>): (\Symfony\Component\HttpFoundation\Response))|string  $view
-     */
-    public static function authorizationView(Closure|string $view): void
-    {
-        app()->singleton(AuthorizationViewResponse::class, fn () => new SimpleViewResponse($view));
-    }
-
-    /**
-     * Specify which view should be used as the device authorization view.
-     *
-     * @param  (\Closure(array<string, mixed>): (\Symfony\Component\HttpFoundation\Response))|string  $view
-     */
-    public static function deviceAuthorizationView(Closure|string $view): void
-    {
-        app()->singleton(DeviceAuthorizationViewResponse::class, fn () => new SimpleViewResponse($view));
-    }
-
-    /**
-     * Specify which view should be used as the device user code view.
-     *
-     * @param  (\Closure(array<string, mixed>): (\Symfony\Component\HttpFoundation\Response))|string  $view
-     */
-    public static function deviceUserCodeView(Closure|string $view): void
-    {
-        app()->singleton(DeviceUserCodeViewResponse::class, fn () => new SimpleViewResponse($view));
     }
 
     /**
