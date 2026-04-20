@@ -53,7 +53,7 @@ abstract class ValidateToken extends BaseMiddleware implements MiddlewareInterfa
     protected function validateToken(ServerRequestInterface $request): ScopeAuthorizable
     {
 		/** @var \BlitzPHP\Vollmacht\Contracts\OAuthenticatable|null */
-		$user = auth()->user();
+		$user = auth(parametre('vollmacht.authenticator') ?? 'vollmacht')->user();
 
 		if ($user?->currentAccessToken()) {
             return $user->currentAccessToken();

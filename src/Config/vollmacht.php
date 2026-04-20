@@ -100,7 +100,7 @@ return [
      */
 	'middlewares' => [
         'api' => [],
-        'web' => ['session'],
+        'web' => ['auth:session'],
     ],
 
 	/**

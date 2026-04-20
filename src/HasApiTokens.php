@@ -138,7 +138,7 @@ trait HasApiTokens
      */
     public function getAuthIdentifier(): mixed
 	{
-		return $this->{$this->getAuthIdentifier()} ?? $this->id;
+		return $this->{$this->getAuthIdentifierName()} ?? $this->id;
 	}
 
     /**

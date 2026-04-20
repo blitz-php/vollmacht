@@ -116,7 +116,10 @@ class Client extends Entity
     protected function redirectUris(): Attribute
     {
         return Attribute::make(
-            get: fn (?string $value, array $attributes): array => match (true) {
+			// Il peut arriver que la valeur soit caster en amont (récuperation via wolke) ou pas (récuperation via le query builder simple)
+			// dans le cas où  nous avons déjà un tableau, on le renvoi simplement
+            get: fn ($value, array $attributes): array => match (true) {
+				is_array($value) => $value,
                 ! empty($value) => $this->fromJson($value),
                 ! empty($attributes['redirect']) => explode(',', $attributes['redirect']),
                 default => [],
@@ -129,17 +132,25 @@ class Client extends Entity
      */
     protected function grantTypes(): Attribute
     {
-        return Attribute::make(
-            get: fn (?string $value): array => isset($value) ? $this->fromJson($value) : array_keys(array_filter([
-                'authorization_code' => ! empty($this->redirect_uris),
-                'client_credentials' => $this->confidential() && $this->firstParty(),
-                'implicit' => ! empty($this->redirect_uris),
-                'password' => $this->password_client,
-                'personal_access' => $this->personal_access_client && $this->confidential(),
-                'refresh_token' => true,
-                'urn:ietf:params:oauth:grant-type:device_code' => true,
-            ])),
-        );
+		return Attribute::make(
+			get: function($value): array {
+				if (!empty($value)) {
+					// Il peut arriver que la valeur soit caster en amont (récuperation via wolke) ou pas (récuperation via le query builder simple)
+					// dans le cas où  nous avons déjà un tableau, on le renvoi simplement
+					return is_array($value) ? $value : $this->fromJson($value);
+				}
+
+				return array_keys(array_filter([
+					'authorization_code' => ! empty($this->redirect_uris),
+					'client_credentials' => $this->confidential() && $this->firstParty(),
+					'implicit' => ! empty($this->redirect_uris),
+					'password' => $this->password_client,
+					'personal_access' => $this->personal_access_client && $this->confidential(),
+					'refresh_token' => true,
+					'urn:ietf:params:oauth:grant-type:device_code' => true,
+				]));
+			}
+		);
     }
 
     /**
@@ -161,7 +172,6 @@ class Client extends Entity
      */
 	public function skipsAuthorization(User $user, array $scopes): bool
     {
-		// public function skipsAuthorization(Authenticatable $user, array $scopes): bool
         return false;
     }
 

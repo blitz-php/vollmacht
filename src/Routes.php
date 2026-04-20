@@ -42,7 +42,7 @@ class Routes
 	 */
 	public static function web(): void
 	{
-		$webMiddlewares = config('vollmacht.middlewares.web', ['session']);
+		$webMiddlewares = config('vollmacht.middlewares.web', ['auth:session']);
 
 		static::registerRoute(['middleware' => $webMiddlewares], function() {
 			// GET /oauth/authorize - Affiche l'écran d'autorisation
@@ -74,7 +74,7 @@ class Routes
 	{
 		['prefix' => $prefix, 'namespace' => $namespace] = static::routesConfig();
 		$apiMiddlewares = array_merge(
-			['api', 'auth.vollmacht'],  // Authentification OAuth requise
+			['api', 'auth:vollmacht'],  // Authentification OAuth requise
 			config('vollmacht.middlewares.api', [])
 		);
 
@@ -89,11 +89,11 @@ class Routes
 
 			// PUT /oauth/clients/{client_id} - Met à jour un client
 			Route::name('vollmacht.clients.update')
-				->put('/clients/(:alphanum)', 'ClientController::update/$1');
+				->put('/clients/(:uuid)', 'ClientController::update/$1');
 
 			// DELETE /oauth/clients/{client_id} - Supprime un client
 			Route::name('vollmacht.clients.destroy')
-				->delete('/clients/(:alphanum)', 'ClientController::destroy/$1');
+				->delete('/clients/(:uuid)', 'ClientController::destroy/$1');
 
 			// GET /oauth/personal-access-tokens - Liste les tokens personnels
 			Route::name('vollmacht.personal.tokens.index')
@@ -105,7 +105,7 @@ class Routes
 			
 			// DELETE /oauth/personal-access-tokens/{token_id} - Révoque un token
 			Route::name('vollmacht.personal.tokens.destroy')
-				->delete('/personal-access-tokens/(:alphanum)', 'PersonalAccessTokenController::destroy/$1');
+				->delete('/personal-access-tokens/(:uuid)', 'PersonalAccessTokenController::destroy/$1');
 		});
 		
 		// GET /oauth/scopes - Liste les scopes disponibles
@@ -128,7 +128,7 @@ class Routes
 				->middleware(['web'])
 				->get('/device', 'DeviceCodeController::form');		
 				
-			$webMiddlewares = config('vollmacht.middlewares.web', ['session']);
+			$webMiddlewares = config('vollmacht.middlewares.web', ['auth:session']);
 			Route::middleware($webMiddlewares)->group(function() {
 				// GET /oauth/device/authorize - Affiche l'écran d'autorisation device
 				Route::name('vollmacht.device.authorizations.authorize')

@@ -13,9 +13,9 @@ class TokenAuth extends BaseMiddleware implements MiddlewareInterface
 {
 	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-		$authenticator = auth(parametre('vollmacht.authenticator', 'vollmacht'))->getAuthenticator();
+		$authenticator = auth(parametre('vollmacht.authenticator') ?? 'vollmacht')->getAuthenticator();
 
-		$token = $request->getHeaderLine(parametre('vollmacht.authenticator_header.tokens', 'Authorization'));
+		$token = $request->getHeaderLine(parametre('vollmacht.authenticator_header.tokens') ?? 'Authorization');
 
         $result = $authenticator->attempt(['token' => $token]);
 
